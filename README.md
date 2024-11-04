@@ -19,9 +19,13 @@ App API endpoints.
 [ Provide a bullet-point list of the app's endpoints (excluding the Auth API) you have successfully implemented. ]
 e.g.
  
-+ POST /thing - add a new 'thing'.
-+ GET /thing/{partition-key}/ - Get all the 'things' with a specified partition key.
-+ GEtT/thing/{partition-key}?attributeX=value - Get all the 'things' with a specified partition key value and attributeX satisfying the condition .....
+- **GET /movies** - Retrieve all movies.
+- **POST /movies** - Add a new movie.
+- **GET /movies/{movieId}** - Get details of a specific movie by its ID.
+- **PUT /movies/{movieId}** - Update an existing movie by its ID.
+- **DELETE /movies/{movieId}** - Delete a specific book by its ID.
+- **DELETE /movies** - Delete all books.
+- **GET movies/{movieId}/translate?language=value** - Translate the overview of a movie based on its ID and target language.
 
 Update constraint (if relevant).
 [Briefly explain your design for the solution to the PUT/Update constraint 
