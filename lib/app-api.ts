@@ -11,6 +11,8 @@ type AppApiProps = {
 };
 
 export class AppApi extends Construct {
+  public readonly requestAuthorizer: apig.RequestAuthorizer; // Export the authorizer
+
   constructor(scope: Construct, id: string, props: AppApiProps) {
     super(scope, id);
 
@@ -36,7 +38,6 @@ export class AppApi extends Construct {
     };
 
     const protectedRes = appApi.root.addResource("protected");
-
     const publicRes = appApi.root.addResource("public");
 
     const protectedFn = new node.NodejsFunction(this, "ProtectedFn", {
@@ -54,18 +55,14 @@ export class AppApi extends Construct {
       entry: "./lambda/lambdas/auth/authorizer.ts",
     });
 
-    const requestAuthorizer = new apig.RequestAuthorizer(
-      this,
-      "RequestAuthorizer",
-      {
-        identitySources: [apig.IdentitySource.header("cookie")],
-        handler: authorizerFn,
-        resultsCacheTtl: cdk.Duration.minutes(0),
-      }
-    );
+    this.requestAuthorizer = new apig.RequestAuthorizer(this, "RequestAuthorizer", {
+      identitySources: [apig.IdentitySource.header("cookie")],
+      handler: authorizerFn,
+      resultsCacheTtl: cdk.Duration.minutes(0),
+    });
 
     protectedRes.addMethod("GET", new apig.LambdaIntegration(protectedFn), {
-      authorizer: requestAuthorizer,
+      authorizer: this.requestAuthorizer,
       authorizationType: apig.AuthorizationType.CUSTOM,
     });
 

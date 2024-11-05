@@ -11,6 +11,7 @@ import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { AuthApi } from './auth-api';
 import { AppApi } from './app-api';
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
 
 export class AuthAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -40,6 +41,11 @@ export class AuthAppStack extends cdk.Stack {
       userPoolId: userPoolId,
       userPoolClientId: userPoolClientId,
     });
+
+    // Create Cognito User Pools Authorizer
+  //   const cognitoAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
+  //     cognitoUserPools: [userPool],
+  // });
 
     // DynamoDB Tables
     const moviesTable = new dynamodb.Table(this, "MoviesTable", {
@@ -130,6 +136,18 @@ export class AuthAppStack extends cdk.Stack {
       },
     });
 
+    const updateMovieFn = new lambdanode.NodejsFunction(this, "UpdateMovieFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambda/lambdas/rest/updateMovie.ts`, 
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: moviesTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
+
     const getTranslationFn = new lambdanode.NodejsFunction(
       this,
       "GetTranslationFn",
@@ -158,9 +176,10 @@ export class AuthAppStack extends cdk.Stack {
     moviesTable.grantReadData(getMovieByIdFn);
     moviesTable.grantReadData(getAllMoviesFn);
     moviesTable.grantReadWriteData(newMovieFn);
-    moviesTable.grantReadData(deleteMovieFn);
+    moviesTable.grantReadWriteData(deleteMovieFn);
     translationsTable.grantReadWriteData(getTranslationFn);  // For the Translations table
     moviesTable.grantReadWriteData(getTranslationFn); // Adding this line for Movies table access
+    moviesTable.grantReadWriteData(updateMovieFn);
 
     // REST API
     const api = new apig.RestApi(this, "RestAPI", {
@@ -179,7 +198,8 @@ export class AuthAppStack extends cdk.Stack {
     const moviesEndpoint = api.root.addResource("movies");
     moviesEndpoint.addMethod(
       "GET",
-      new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
+      new apig.LambdaIntegration(getAllMoviesFn, { proxy: true }),
+      //{authorizer: cognitoAuthorizer} // Protected by Cognito
     );
 
     const movieEndpoint = moviesEndpoint.addResource("{movieId}");
@@ -187,27 +207,38 @@ export class AuthAppStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getMovieByIdFn, { proxy: true }),
       {
+        //authorizer: cognitoAuthorizer, // Protected by Cognito
         requestParameters: {
           'method.request.querystring.cast': false // Allow optional query parameter
-        }
+        },
+        
       }
     );
     
 
     moviesEndpoint.addMethod(
       "POST",
-      new apig.LambdaIntegration(newMovieFn, { proxy: true })
+      new apig.LambdaIntegration(newMovieFn, { proxy: true }),
+      //{authorizer: cognitoAuthorizer} // Protected by Cognito
+    );
+
+    movieEndpoint.addMethod(
+      "PUT",
+      new apig.LambdaIntegration(updateMovieFn, { proxy: true }),
+      //{authorizer: cognitoAuthorizer} // Protected by Cognito
     );
 
     movieEndpoint.addMethod(
       "DELETE",
-      new apig.LambdaIntegration(deleteMovieFn, { proxy: true })
+      new apig.LambdaIntegration(deleteMovieFn, { proxy: true }),
+      //{authorizer: cognitoAuthorizer} // Protected by Cognito
     );
 
     const translateEndpoint = movieEndpoint.addResource("translate");
     translateEndpoint.addMethod(
       "GET",
-      new apig.LambdaIntegration(getTranslationFn, { proxy: true })
+      new apig.LambdaIntegration(getTranslationFn, { proxy: true }),
+      //{authorizer: cognitoAuthorizer} // Protected by Cognito
     )
     
   }

@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const ddbDocClient = createDDbDocClient();
 
@@ -22,26 +22,38 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   }
 
-  try {
-    // Prepare the DeleteCommand
-    const command = new DeleteCommand({
-      TableName: process.env.TABLE_NAME, // DynamoDB table name from environment
-      Key: { id :Number(movieId)  }, // Primary key for the movie to be deleted
-    });
+  // Parse the body to get update data
+  const updateData = JSON.parse(event.body || "{}");
 
-    // Execute the delete command
-    await ddbDocClient.send(command);
+  try {
+    const command = new UpdateCommand({
+        TableName: process.env.TABLE_NAME, // DynamoDB table name from environment
+        Key: { id: Number(movieId) }, // Use `id` instead of `movieId`, and ensure it's a number
+        UpdateExpression: "set title = :title, genre_ids = :genre_ids",
+        ExpressionAttributeValues: {
+          ":title": updateData.title,
+          ":genre_ids": updateData.genre_ids,
+        },
+        ReturnValues: "ALL_NEW", // Return the updated item
+      });
+      
+
+    // Execute the update command
+    const response = await ddbDocClient.send(command);
 
     return {
       statusCode: 200,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ message: `Movie with ID ${movieId} deleted successfully.` }),
+      body: JSON.stringify({
+        message: `Movie with ID ${movieId} updated successfully.`,
+        updatedMovie: response.Attributes,
+      }),
     };
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error(`[ERROR] Deleting movie with ID ${movieId}:`, error);
+      console.error(`[ERROR] Updating movie with ID ${movieId}:`, error);
       return {
         statusCode: 500,
         headers: {
@@ -50,7 +62,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         body: JSON.stringify({ error: error.message }),
       };
     } else {
-      console.error(`[ERROR] Deleting movie with ID ${movieId}:`, error);
+      console.error(`[ERROR] Updating movie with ID ${movieId}:`, error);
       return {
         statusCode: 500,
         headers: {
