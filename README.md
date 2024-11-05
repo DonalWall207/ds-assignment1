@@ -22,7 +22,6 @@ State the context you chose for your web API and detail the attributes stored in
 - **GET /movies/{movieId}** - Get details of a specific movie by its ID.
 - **PUT /movies/{movieId}** - Update an existing movie by its ID.
 - **DELETE /movies/{movieId}** - Delete a specific book by its ID.
-- **DELETE /movies** - Delete all books.
 - **GET movies/{movieId}/translate?language=value** - Translate the overview of a movie based on its ID and target language.
 
 ### Auth API endpoints.
