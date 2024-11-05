@@ -37,7 +37,12 @@ State the context you chose for your web API and detail the attributes stored in
 only the user who added an item to the main table could update it.]
 
 ### Translation persistence (if relevant).
-[Briefly explain your design for the solution to avoid repeat requests to Amazon Translate - persist translations so that Amazon Translate can be bypassed for repeat translation requests.]
+
+The lambda function (translate.ts) uses AWS Translate to translate the movie overview text based on language codes provided by the user. The method fetches movie content from DynamoDB and translates the overview when the request is made.
+
+Here were the relevent websites/video walkthroughs I used as referneces to complete this:
+- https://docs.aws.amazon.com/cdk/v2/guide/permissions.html
+- https://completecoding.io/typescript-translation-api/
 
 ### Extra (If relevant).
 [ State whether you have created a multi-stack solution for this assignment or used lambda layers to speed up update deployments. Also, mention any aspect of the CDK framework __that was not covered in the lectures that you used in this assignment. ]
