@@ -230,7 +230,10 @@ export class AppApi extends Construct {
     moviesEndpoint.addMethod(
       "POST",
       new apig.LambdaIntegration(newMovieFn, { proxy: true }),
-      
+      {
+        authorizer: requestAuthorizer,
+        authorizationType: apig.AuthorizationType.CUSTOM,
+      }
     );
 
     movieEndpoint.addMethod(
