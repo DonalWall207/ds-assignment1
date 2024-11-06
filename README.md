@@ -25,7 +25,7 @@ And many more. I feel this data was enough to demostrate my knowledge, the vario
 ### App API endpoints.
  
 - **GET /movies** - Retrieve all movies.
-- **POST /movies** - Add a new movie.
+- **POST /movies** - Add a new movie (Protetced Route).
 - **GET /movies/{movieId}** - Get details of a specific movie by its ID.
 - **PUT /movies/{movieId}** - Update an existing movie by its ID (Protetced Route).
 - **DELETE /movies/{movieId}** - Delete a specific book by its ID.
